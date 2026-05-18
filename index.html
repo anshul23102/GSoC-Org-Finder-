@@ -1130,6 +1130,16 @@
   </div>
 </footer>
 
+<button
+  id="backToTopBtn"
+  type="button"
+  class="fixed bottom-6 right-6 z-40 flex h-12 w-12 translate-y-2 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-all duration-200 hover:bg-primary-container focus:outline-none focus:ring-2 focus:ring-orange-400 opacity-0 pointer-events-none"
+  aria-label="Back to top"
+  title="Back to top"
+>
+  <span class="material-symbols-outlined">keyboard_arrow_up</span>
+</button>
+
 <!-- ═══════════════════ MODAL ═══════════════════ -->
 <div class="modal-bg" id="orgModal">
   <div class="modal">
@@ -1335,6 +1345,26 @@
   
   // Initialize on page load
   document.addEventListener('DOMContentLoaded', updateActiveSection);
+
+  // ══════════════════════════════════════════════
+  // BACK TO TOP BUTTON
+  // ══════════════════════════════════════════════
+  const backToTopBtn = document.getElementById('backToTopBtn');
+  function updateBackToTopButton(){
+    if (!backToTopBtn) return;
+    const shouldShow = window.scrollY > 300;
+    backToTopBtn.classList.toggle('opacity-0', !shouldShow);
+    backToTopBtn.classList.toggle('pointer-events-none', !shouldShow);
+    backToTopBtn.classList.toggle('translate-y-2', !shouldShow);
+  }
+
+  if (backToTopBtn) {
+    backToTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    window.addEventListener('scroll', updateBackToTopButton, { passive: true });
+    updateBackToTopButton();
+  }
 
   // ══════════════════════════════════════════════
   // Shared escaping helper (for all dynamic text used in HTML strings)
