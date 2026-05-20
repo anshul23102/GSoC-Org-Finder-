@@ -1,119 +1,50 @@
 const fs = require('fs');
 
-const statsPath =
-  '.github/reviewers/mentor-stats.json';
+const statsPath = '.github/reviewers/mentor-stats.json';
+const mentorsPath = '.github/reviewers/gssoc-mentors.json';
 
-const mentorsPath =
-  '.github/reviewers/gssoc-mentors.json';
+const reviewer = process.env.REVIEWER;
+const reviewState = process.env.REVIEW_STATE;
+const reviewId = String(process.env.REVIEW_ID || '');
+const reviewedAt = process.env.REVIEWED_AT || new Date().toISOString();
+const isMerged = process.env.PR_MERGED === 'true';
+const isPriority = process.env.IS_PRIORITY === 'true';
+const isAssignmentApproval = process.env.IS_ASSIGNMENT_APPROVAL === 'true';
+const lowEffort = process.env.IS_LOW_EFFORT === 'true';
 
-// --------------------------------------------------
-// ENV
-// --------------------------------------------------
+function readJson(path, fallback) { try { return JSON.parse(fs.readFileSync(path, 'utf8')); } catch { return fallback; } }
+const mentors = new Set((readJson(mentorsPath, { reviewers: [] }).reviewers || []).map(String));
+if (!reviewer || !mentors.has(reviewer)) process.exit(0);
 
-const reviewer =
-  process.env.REVIEWER;
-
-const reviewState =
-  process.env.REVIEW_STATE;
-
-const reviewId =
-  process.env.REVIEW_ID;
-
-// --------------------------------------------------
-// LOAD FILES
-// --------------------------------------------------
-
-const mentorsData = JSON.parse(
-  fs.readFileSync(mentorsPath, 'utf8')
-);
-
-const statsData = JSON.parse(
-  fs.readFileSync(statsPath, 'utf8')
-);
-
-// --------------------------------------------------
-// VALIDATE MENTOR
-// --------------------------------------------------
-
-const validMentors =
-  new Set(mentorsData.reviewers || []);
-
-if (!validMentors.has(reviewer)) {
-  console.log(
-    `${reviewer} is not a registered mentor`
-  );
-
-  process.exit(0);
-}
-
-// --------------------------------------------------
-// INIT
-// --------------------------------------------------
+const statsData = readJson(statsPath, { mentors: {} });
+statsData.mentors = statsData.mentors || {};
 
 if (!statsData.mentors[reviewer]) {
-
   statsData.mentors[reviewer] = {
-    reviews: 0,
-    approvals: 0,
-    changes_requested: 0,
-    comments: 0,
-    last_reviewed_at: null,
-    review_ids: []
+    reviews: 0, approvals: 0, changes_requested: 0, comments: 0,
+    merged_reviews: 0, assignment_approvals: 0, priority_reviews: 0,
+    review_quality_score: 0, last_reviewed_at: '', review_ids: []
   };
 }
+const m = statsData.mentors[reviewer];
+m.review_ids = Array.isArray(m.review_ids) ? m.review_ids.map(String) : [];
+if (!reviewId || m.review_ids.includes(reviewId)) process.exit(0);
 
-const mentor =
-  statsData.mentors[reviewer];
+m.reviews = (m.reviews || 0) + 1;
+if (reviewState === 'APPROVED') m.approvals = (m.approvals || 0) + 1;
+if (reviewState === 'CHANGES_REQUESTED') m.changes_requested = (m.changes_requested || 0) + 1;
+if (reviewState === 'COMMENTED') m.comments = (m.comments || 0) + 1;
+if (isMerged) m.merged_reviews = (m.merged_reviews || 0) + 1;
+if (isAssignmentApproval) m.assignment_approvals = (m.assignment_approvals || 0) + 1;
+if (isPriority) m.priority_reviews = (m.priority_reviews || 0) + 1;
 
-// --------------------------------------------------
-// PREVENT DUPLICATES
-// --------------------------------------------------
+const qualityDelta = lowEffort ? -1.5 : (reviewState === 'APPROVED' ? 1.2 : 0.8);
+m.review_quality_score = Number(((m.review_quality_score || 0) + qualityDelta).toFixed(2));
+m.last_reviewed_at = reviewedAt;
+m.review_ids.push(reviewId);
+m.review_ids = m.review_ids.slice(-200);
 
-if (mentor.review_ids.includes(reviewId)) {
-
-  console.log(
-    `Review ${reviewId} already tracked`
-  );
-
-  process.exit(0);
-}
-
-// --------------------------------------------------
-// UPDATE STATS
-// --------------------------------------------------
-
-mentor.reviews++;
-
-if (reviewState === 'APPROVED') {
-  mentor.approvals++;
-}
-
-if (reviewState === 'CHANGES_REQUESTED') {
-  mentor.changes_requested++;
-}
-
-if (reviewState === 'COMMENTED') {
-  mentor.comments++;
-}
-
-mentor.last_reviewed_at =
-  new Date().toISOString();
-
-mentor.review_ids.push(reviewId);
-
-// Limit stored IDs
-mentor.review_ids =
-  mentor.review_ids.slice(-200);
-
-// --------------------------------------------------
-// SAVE
-// --------------------------------------------------
-
-fs.writeFileSync(
-  statsPath,
-  JSON.stringify(statsData, null, 2)
-);
-
-console.log(
-  `Updated mentor stats for ${reviewer}`
-);
+const ordered = Object.keys(statsData.mentors).sort().reduce((acc, k) => (acc[k] = statsData.mentors[k], acc), {});
+statsData.mentors = ordered;
+fs.writeFileSync(statsPath, JSON.stringify(statsData, null, 2) + '\n');
+console.log(`Updated mentor stats for ${reviewer}`);

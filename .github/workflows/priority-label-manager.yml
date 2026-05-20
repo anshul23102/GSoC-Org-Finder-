@@ -1,0 +1,25 @@
+name: Priority Label Manager
+on:
+  pull_request:
+    types: [opened, reopened, labeled, unlabeled, synchronize]
+permissions:
+  pull-requests: write
+concurrency:
+  group: priority-label-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  normalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v8
+        with:
+          script: |
+            const allowed = ['priority-p0','priority-p1','priority-p2','priority-p3','priority-p4'];
+            const labels = (context.payload.pull_request.labels || []).map(l=>l.name.toLowerCase()).filter(l=>allowed.includes(l)).sort();
+            if (labels.length <= 1) return;
+            const keep = labels[0];
+            for (const l of labels.slice(1)) {
+              await github.rest.issues.removeLabel({owner: context.repo.owner, repo: context.repo.repo, issue_number: context.payload.pull_request.number, name: l});
+            }
+            core.info(`Kept ${keep}`);
