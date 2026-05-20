@@ -9,7 +9,7 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: mentor-review-tracker-${{ github.event.pull_request.number }}-${{ github.event.review.id }}
+  group: mentor-review-tracker-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
 jobs:
