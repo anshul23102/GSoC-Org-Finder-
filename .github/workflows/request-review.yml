@@ -41,4 +41,8 @@ jobs:
             const pr = context.payload.pull_request;
             const labels = (pr.labels || []).map(l => l.name.toLowerCase());
             if (!labels.includes('gssoc26') && !labels.includes('nsoc') && !labels.includes('general-oss')) return;
-            await github.rest.pulls.requestReviewers({ owner: context.repo.owner, repo: context.repo.repo, pull_number: pr.number, reviewers: selected });
+            try {
+              await github.rest.pulls.requestReviewers({ owner: context.repo.owner, repo: context.repo.repo, pull_number: pr.number, reviewers: selected });
+            } catch (error) {
+              core.warning(`Failed to request reviewers: ${error?.message || error}`);
+            }
