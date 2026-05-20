@@ -12,7 +12,14 @@ const isPriority = process.env.IS_PRIORITY === 'true';
 const isAssignmentApproval = process.env.IS_ASSIGNMENT_APPROVAL === 'true';
 const lowEffort = process.env.IS_LOW_EFFORT === 'true';
 
-function readJson(path, fallback) { try { return JSON.parse(fs.readFileSync(path, 'utf8')); } catch { return fallback; } }
+function readJson(path, fallback) {
+  try {
+    return JSON.parse(fs.readFileSync(path, 'utf8'));
+  } catch (error) {
+    if (error && error.code === 'ENOENT') return fallback;
+    throw error;
+  }
+}
 const mentors = new Set((readJson(mentorsPath, { reviewers: [] }).reviewers || []).map(String));
 if (!reviewer || !mentors.has(reviewer)) process.exit(0);
 
