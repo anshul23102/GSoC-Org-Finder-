@@ -1,18 +1,18 @@
 {
-  "generatedAt": "2026-05-09T13:08:02.489Z",
+  "generatedAt": "2026-07-02T08:56:58.463Z",
   "totalIssues": 50,
-  "totalOrgs": 20,
-  "totalLabels": 68,
+  "totalOrgs": 17,
+  "totalLabels": 58,
   "topOrganizations": [
     "AFLplusplus",
     "AnkiDroid",
     "ArduPilot",
     "Boa",
-    "C2SI",
     "cBioPortal for Cancer Genomics",
     "checkstyle",
     "CircuitVerse.org",
-    "Dart",
-    "DBpedia"
+    "omegaUp",
+    "Open Food Facts",
+    "OpenAstronomy"
   ]
 }
